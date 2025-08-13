@@ -4,8 +4,6 @@ from app.crud import admin as admin_crud
 from app.schemas.event import EventCreate, EventPublic
 from app.schemas.update import LiveUpdateCreate, LiveUpdatePublic
 from app.schemas.video import VideoPublic
-from app.schemas.common import StatusJSON
-from app.schemas.admin import Analytics
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
