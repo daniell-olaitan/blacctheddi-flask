@@ -1,0 +1,108 @@
+from sqlmodel import Session, select
+from app.storage.models import Admin, Event, LiveUpdate, Video, Category, VideoCategoryLink
+from app.schemas.event import EventCreate
+from app.schemas.update import LiveUpdateCreate
+from werkzeug.datastructures import FileStorage
+from app.schemas.common import StatusJSON
+from app.schemas.admin import Analytics
+from app.core.utils import store_file
+
+
+def get_admin(db: Session, username: str) -> Admin | None:
+    return db.exec(select(Admin).where(Admin.username == username)).first()
+
+
+def validate_category_ids(db: Session, ids: list) -> list[Category] | None:
+    categories = db.exec(
+        select(Category).where(Category.id.in_(ids))
+    ).all()
+
+    if len(categories) == len(set(ids)):
+        return categories
+
+    return None
+
+
+def create_event(
+    db: Session,
+    event_data: EventCreate,
+    image_file: FileStorage
+) -> Event:
+    image_url = store_file(image_file, 'images') if image_file else None
+    event = Event(
+        **event_data.model_dump(),
+        image_url=image_url
+    )
+
+    db.add(event)
+    db.commit()
+    db.refresh(event)
+
+    return event
+
+
+def add_update(
+    db: Session,
+    event_id: int,
+    update_data: LiveUpdateCreate,
+    image_file: FileStorage
+) -> LiveUpdate:
+    image_url = store_file(image_file, 'images') if image_file else None
+    update = LiveUpdate(
+        **update_data.model_dump(),
+        event_id=event_id,
+        image_url=image_url
+    )
+
+    db.add(update)
+    db.commit()
+    db.refresh(update)
+
+    return update
+
+
+def upload_files(
+    db: Session,
+    video_data: dict,
+    thumbnail: FileStorage,
+    video_file: FileStorage
+) -> Video:
+    thumbnail_url = store_file(thumbnail, 'images') if thumbnail else None
+    video_url = store_file(video_file)
+    video = Video(
+        title=video_data['title'],
+        description=video_data['description'],
+        url=video_url,
+        thumbnail_url=thumbnail_url
+    )
+
+    db.add(video)
+    db.commit()
+    db.refresh(video)
+
+    for cat in video_data['categories']:
+        link = VideoCategoryLink(video_id=video.id, category_id=cat.id)
+        db.add(link)
+
+    db.commit()
+    db.refresh(video)
+
+    return video
+
+
+def get_analytics(db: Session) -> Analytics:
+    videos =  db.exec(select(Video)).all()
+    return Analytics(
+        total_views=sum(v.views for v in videos),
+        total_updates=len(db.exec(select(LiveUpdate)).all()),
+        total_videos=len(videos)
+    )
+
+
+def delete_event(db: Session, event_id: int) -> StatusJSON:
+    event = db.get(Event, event_id)
+    if event:
+        db.delete(event)
+        db.commit()
+
+    return StatusJSON(status='ok')
