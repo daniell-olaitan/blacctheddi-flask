@@ -29,13 +29,14 @@ CORS(app, origins=[
 
 # Register Blueprints (auth, admin, etc.)
 from app.blueprints import auth, admin, video, update, event, like, category
-app.register_blueprint(auth.auth_bp, url_prefix="/auth")
-app.register_blueprint(admin.admin_bp, url_prefix="/admin")
-app.register_blueprint(video.video_bp, url_prefix="/tvs")
-app.register_blueprint(update.update_bp, url_prefix="/updates")
-app.register_blueprint(event.event_bp, url_prefix="/events")
-app.register_blueprint(like.like_bp, url_prefix="/likes")
-app.register_blueprint(category.category_bp, url_prefix="/categories")
+
+app.register_blueprint(auth.auth_bp, url_prefix="/auth", strict_slashes=False)
+app.register_blueprint(admin.admin_bp, url_prefix="/admin", strict_slashes=False)
+app.register_blueprint(video.video_bp, url_prefix="/tvs", strict_slashes=False)
+app.register_blueprint(update.update_bp, url_prefix="/updates", strict_slashes=False)
+app.register_blueprint(event.event_bp, url_prefix="/events", strict_slashes=False)
+app.register_blueprint(like.like_bp, url_prefix="/likes", strict_slashes=False)
+app.register_blueprint(category.category_bp, url_prefix="/categories", strict_slashes=False)
 
 
 # Startup logic
