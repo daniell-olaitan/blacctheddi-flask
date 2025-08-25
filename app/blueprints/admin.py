@@ -23,7 +23,7 @@ admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
 @admin_bp.route("/videos/multipart/initiate", methods=["POST"])
 @verify_admin
-def initiate_video_upload():
+def initiate_video_upload(current_admin):
     data = request.json
     filename = data.get("filename")
     content_type = data.get("content_type", "video/mp4")
@@ -47,7 +47,7 @@ def initiate_video_upload():
 
 @admin_bp.route("/videos/multipart/sign-part", methods=["POST"])
 @verify_admin
-def sign_video_part():
+def sign_video_part(current_admin):
     data = request.json
     key = data.get("key")
     upload_id = data.get("upload_id")
