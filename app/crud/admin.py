@@ -1,3 +1,5 @@
+import boto3
+
 from sqlmodel import Session, select
 from app.storage.models import Admin, Event, LiveUpdate, Video, Category, VideoCategoryLink
 from app.schemas.event import EventCreate
@@ -6,6 +8,15 @@ from werkzeug.datastructures import FileStorage
 from app.schemas.common import StatusJSON
 from app.schemas.admin import Analytics
 from app.core.utils import store_file
+from config import get_settings
+
+settings = get_settings()
+r2_client = boto3.client(
+    "s3",
+    endpoint_url=settings.r2_endpoint_url_s3,
+    aws_access_key_id=settings.r2_access_key_id,
+    aws_secret_access_key=settings.r2_secret_access_key
+)
 
 
 def get_admin(db: Session, username: str) -> Admin | None:
@@ -65,14 +76,12 @@ def upload_files(
     db: Session,
     video_data: dict,
     thumbnail: FileStorage,
-    video_file: FileStorage
 ) -> Video:
     thumbnail_url = store_file(thumbnail, 'images') if thumbnail else None
-    video_url = store_file(video_file)
     video = Video(
         title=video_data['title'],
         description=video_data['description'],
-        url=video_url,
+        url=video_data['video_url'],
         thumbnail_url=thumbnail_url
     )
 
