@@ -5,7 +5,7 @@ from app.schemas.comment import CommentPublic, CommentCreate
 from app.schemas.like import LikePublic
 from app.schemas.video import VideoCombined, VideoPublicWithRel
 
-video_bp = Blueprint("video", __name__, url_prefix="/videos")
+video_bp = Blueprint("video", __name__, url_prefix="/tvs")
 
 
 @video_bp.route("/ungrouped", methods=["GET"])
