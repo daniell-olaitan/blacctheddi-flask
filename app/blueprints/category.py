@@ -7,7 +7,7 @@ from app.schemas.category import CategoryPublic
 category_bp = Blueprint("category", __name__, url_prefix="/categories")
 
 
-@category_bp.route("/", methods=["GET"])
+@category_bp.route("", methods=["GET"])
 def fetch_all_video_categories():
     with get_db() as db:
         categories = category_crud.get_all_categories(db)

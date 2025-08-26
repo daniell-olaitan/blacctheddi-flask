@@ -8,7 +8,7 @@ from app.schemas.like import LikePublic
 event_bp = Blueprint("event", __name__, url_prefix="/events")
 
 
-@event_bp.route("/", methods=["GET"])
+@event_bp.route("", methods=["GET"])
 def list_events():
     with get_db() as db:
         events = events_crud.get_all_live_events(db)

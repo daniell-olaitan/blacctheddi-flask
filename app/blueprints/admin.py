@@ -118,32 +118,6 @@ def complete_video_upload(current_admin):
         created_video = admin_crud.upload_files(db, video_data, thumbnail)
         return jsonify(VideoPublic.model_validate(created_video).model_dump())
 
-    with get_db() as db:
-        categories = admin_crud.validate_category_ids(db, category_ids)
-        if categories is None:
-            return jsonify({"error": "Some category IDs are invalid."}), 400
-
-
-        video = Video(
-            title=title,
-            description=description,
-            url=video_url,
-            thumbnail_url=thumbnail_url
-        )
-
-        db.add(video)
-        db.commit()
-        db.refresh(video)
-
-        for cat in categories:
-            link = VideoCategoryLink(video_id=video.id, category_id=cat.id)
-            db.add(link)
-
-        db.commit()
-        db.refresh(video)
-
-        return jsonify(VideoPublic.model_validate(video).model_dump())
-
 
 @admin_bp.route("/events", methods=["POST"])
 @verify_admin
