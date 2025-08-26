@@ -1,5 +1,6 @@
 import boto3
 
+from botocore.client import Config
 from sqlmodel import SQLModel, Field, create_engine, Relationship
 from sqlalchemy import Column, TEXT, event
 from urllib.parse import urlparse
@@ -92,7 +93,8 @@ r2_client = boto3.client(
     "s3",
     endpoint_url=settings.r2_endpoint_url_s3,
     aws_access_key_id=settings.r2_access_key_id,
-    aws_secret_access_key=settings.r2_secret_access_key
+    aws_secret_access_key=settings.r2_secret_access_key,
+    config=Config(signature_version="s3v4")
 )
 
 # Utility to delete a file from R2 given its public URL
