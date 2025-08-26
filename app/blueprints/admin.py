@@ -1,6 +1,7 @@
 import boto3
 import json
 
+from botocore.client import Config
 from uuid import uuid4
 from flask import Blueprint, request, jsonify
 from app.core.dependencies import get_db, verify_admin
@@ -15,7 +16,8 @@ r2_client = boto3.client(
     "s3",
     endpoint_url=settings.r2_endpoint_url_s3,
     aws_access_key_id=settings.r2_access_key_id,
-    aws_secret_access_key=settings.r2_secret_access_key
+    aws_secret_access_key=settings.r2_secret_access_key,
+    config=Config(signature_version="s3v4")
 )
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
