@@ -71,4 +71,4 @@ def store_file(file: FileStorage, file_type: str = "videos") -> str:
         return f"{settings.r2_public_url}/{key}"
 
     except Exception as e:
-        abort(500, description=f"Upload failed: {str(e)}")
+        abort(500, description=f"Upload failed")

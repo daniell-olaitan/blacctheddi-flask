@@ -5,9 +5,9 @@ from datetime import timedelta
 from app.schemas.auth import Token, PWDReset, TokenFull, LoginRequest
 from app.core.utils import create_token, verify_password, get_password_hash, get_settings
 from app.schemas.common import StatusJSON
-from app.core.dependencies import get_db, verify_admin
-from app.crud.admin import get_admin
+from app.core.dependencies import verify_admin, safe_db_operation
 from app.storage.models import Admin
+from sqlmodel import Session, select
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
@@ -25,31 +25,41 @@ def login_for_access_token():
     try:
         payload = LoginRequest(**data)
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"error": 'invalid input'}), 400
 
-    with get_db() as db:
-        admin = get_admin(db=db, username=payload.username)
-        if not admin:
-            return jsonify({"detail": "Incorrect username"}), 401
+    try:
+        def _get_admin(db: Session, username: str) -> str | None:
+            admin = db.exec(select(Admin).where(Admin.username == username)).first()
+            if admin:
+                return admin.password
 
-        if not verify_password(payload.password, admin.password):
-            return jsonify({"detail": "Incorrect password"}), 401
+            return None
 
-        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        access_token = create_token(
-            data={"sub": admin.username}, expires_delta=access_token_expires
-        )
+        admin_pwd = safe_db_operation(_get_admin, username=payload.username)
+    except Exception as e:
+        return jsonify({"error": 'failed'}), 500
 
-        refresh_token = create_token(
-            data={"sub": admin.username}, expires_delta=timedelta(days=7)
-        )
+    if admin_pwd is None:
+        return jsonify({"detail": "Incorrect username"}), 401
 
-        token_data = TokenFull(
-            access_token=access_token,
-            refresh_token=refresh_token,
-            token_type="bearer"
-        )
-        return jsonify(token_data.model_dump())
+    if not verify_password(payload.password, admin_pwd):
+        return jsonify({"detail": "Incorrect password"}), 401
+
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_token(
+        data={"sub": payload.username}, expires_delta=access_token_expires
+    )
+
+    refresh_token = create_token(
+        data={"sub": payload.username}, expires_delta=timedelta(days=7)
+    )
+
+    token_data = TokenFull(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer"
+    )
+    return jsonify(token_data.model_dump())
 
 
 @auth_bp.route("/refresh", methods=["POST"])
@@ -93,11 +103,17 @@ def change_admin_password(current_admin: Admin):
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-    with get_db() as db:
+    def _verify_pwd(db: Session):
         if verify_password(user_details.old_password, current_admin.password):
             current_admin.password = get_password_hash(user_details.new_password)
             db.add(current_admin)
-            db.commit()
-            return jsonify(StatusJSON(status="ok").model_dump())
 
-        return jsonify({"detail": "Incorrect old password"}), 400
+            return StatusJSON(status="ok").model_dump()
+
+        return None
+
+    status = safe_db_operation(_verify_pwd)
+    if status:
+        return jsonify(status)
+
+    return jsonify({"detail": "Incorrect old password"}), 400

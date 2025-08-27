@@ -34,11 +34,14 @@ def initiate_video_upload():
 
     key = f"videos/{uuid4()}_{filename}"
 
-    response = r2_client.create_multipart_upload(
-        Bucket=settings.r2_bucket_name,
-        Key=key,
-        ContentType=content_type
-    )
+    try:
+        response = r2_client.create_multipart_upload(
+            Bucket=settings.r2_bucket_name,
+            Key=key,
+            ContentType=content_type
+        )
+    except Exception as e:
+        return jsonify({'error': 'failed'}), 500
 
     return jsonify({
         "upload_id": response["UploadId"],
@@ -57,16 +60,19 @@ def sign_video_part():
     if not key or not upload_id or not part_number:
         return jsonify({"error": "Missing key, upload_id, or part_number"}), 400
 
-    url = r2_client.generate_presigned_url(
-        "upload_part",
-        Params={
-            "Bucket": settings.r2_bucket_name,
-            "Key": key,
-            "UploadId": upload_id,
-            "PartNumber": part_number
-        },
-        ExpiresIn=3600
-    )
+    try:
+        url = r2_client.generate_presigned_url(
+            "upload_part",
+            Params={
+                "Bucket": settings.r2_bucket_name,
+                "Key": key,
+                "UploadId": upload_id,
+                "PartNumber": part_number
+            },
+            ExpiresIn=3600
+        )
+    except Exception as e:
+        return jsonify({'error': 'failed'}), 500
 
     return jsonify({"url": url})
 
