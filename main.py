@@ -5,12 +5,12 @@ load_dotenv()
 from flask import Flask, jsonify
 from flask_cors import CORS
 from config import get_settings
-from app.storage.database import create_db, engine
+from app.storage.database import create_db
 from app.storage.models import Admin, Category
 from app.crud.admin import get_admin
 from app.core.utils import get_password_hash
-from app.core.dependencies import get_db
-from sqlmodel import select
+from app.core.dependencies import safe_db_operation
+from sqlmodel import select, Session
 
 settings = get_settings()
 
@@ -43,10 +43,9 @@ app.register_blueprint(category.category_bp, strict_slashes=False)
 # Startup logic
 create_db()
 
-# Create default admin
-with get_db() as db:
-    admin_user = get_admin(db, settings.admin_user)
-    if not admin_user:
+
+def create_defaults(db: Session):
+    if not get_admin(db, settings.admin_user):
         admin_user = Admin(
             username=settings.admin_user,
             password=get_password_hash(settings.admin_pwd)
@@ -58,8 +57,8 @@ with get_db() as db:
         if not db.exec(select(Category).where(Category.name == name)).first():
             db.add(Category(name=name))
 
-    db.commit()
 
+safe_db_operation(create_defaults)
 
 # Status route
 @app.route("/")

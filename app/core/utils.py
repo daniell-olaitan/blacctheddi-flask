@@ -9,9 +9,8 @@ from datetime import timedelta, timezone, datetime
 from werkzeug.datastructures import FileStorage
 from flask import abort
 
-settings = get_settings()
-
 ALGORITHM = "HS256"
+settings = get_settings()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 

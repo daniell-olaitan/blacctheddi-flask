@@ -1,5 +1,8 @@
 import boto3
 
+from app.schemas.event import EventPublic
+from app.schemas.update import LiveUpdatePublic
+from app.schemas.video import VideoPublic
 from sqlmodel import Session, select
 from app.storage.models import Admin, Event, LiveUpdate, Video, Category, VideoCategoryLink
 from app.schemas.event import EventCreate
@@ -19,19 +22,22 @@ r2_client = boto3.client(
 )
 
 
-def get_admin(db: Session, username: str) -> Admin | None:
-    return db.exec(select(Admin).where(Admin.username == username)).first()
+def get_admin(db: Session, username: str) -> bool:
+    if db.exec(select(Admin).where(Admin.username == username)).first():
+        return True
+
+    return False
 
 
-def validate_category_ids(db: Session, ids: list) -> list[Category] | None:
+def validate_category_ids(db: Session, ids: list) -> bool:
     categories = db.exec(
         select(Category).where(Category.id.in_(ids))
     ).all()
 
     if len(categories) == len(set(ids)):
-        return categories
+        return True
 
-    return None
+    return False
 
 
 def create_event(
@@ -46,10 +52,10 @@ def create_event(
     )
 
     db.add(event)
-    db.commit()
+    db.flush()
     db.refresh(event)
 
-    return event
+    return EventPublic.model_validate(event).model_dump()
 
 
 def add_update(
@@ -66,10 +72,10 @@ def add_update(
     )
 
     db.add(update)
-    db.commit()
+    db.flush()
     db.refresh(update)
 
-    return update
+    return LiveUpdatePublic.model_validate(update).model_dump()
 
 
 def upload_files(
@@ -86,17 +92,17 @@ def upload_files(
     )
 
     db.add(video)
-    db.commit()
+    db.flush()
     db.refresh(video)
 
-    for cat in video_data['categories']:
-        link = VideoCategoryLink(video_id=video.id, category_id=cat.id)
+    for id in video_data['categories']:
+        link = VideoCategoryLink(video_id=video.id, category_id=id)
         db.add(link)
 
-    db.commit()
+    db.flush()
     db.refresh(video)
 
-    return video
+    return VideoPublic.model_validate(video).model_dump()
 
 
 def get_analytics(db: Session) -> Analytics:
@@ -112,6 +118,5 @@ def delete_event(db: Session, event_id: int) -> StatusJSON:
     event = db.get(Event, event_id)
     if event:
         db.delete(event)
-        db.commit()
 
     return StatusJSON(status='ok')
