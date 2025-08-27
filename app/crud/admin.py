@@ -44,7 +44,7 @@ def create_event(
     db: Session,
     event_data: EventCreate,
     image_file: FileStorage
-) -> Event:
+) -> EventPublic:
     image_url = store_file(image_file, 'images') if image_file else None
     event = Event(
         **event_data.model_dump(),
@@ -63,7 +63,7 @@ def add_update(
     event_id: int,
     update_data: LiveUpdateCreate,
     image_file: FileStorage
-) -> LiveUpdate:
+) -> LiveUpdatePublic:
     image_url = store_file(image_file, 'images') if image_file else None
     update = LiveUpdate(
         **update_data.model_dump(),
@@ -82,7 +82,7 @@ def upload_files(
     db: Session,
     video_data: dict,
     thumbnail: FileStorage,
-) -> Video:
+) -> VideoPublic:
     thumbnail_url = store_file(thumbnail, 'images') if thumbnail else None
     video = Video(
         title=video_data['title'],
