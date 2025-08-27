@@ -9,7 +9,8 @@ from app.storage.database import create_db, engine
 from app.storage.models import Admin, Category
 from app.crud.admin import get_admin
 from app.core.utils import get_password_hash
-from sqlmodel import Session, select
+from app.core.dependencies import get_db
+from sqlmodel import select
 
 settings = get_settings()
 
@@ -43,7 +44,7 @@ app.register_blueprint(category.category_bp, strict_slashes=False)
 create_db()
 
 # Create default admin
-with Session(engine) as db:
+with get_db() as db:
     admin_user = get_admin(db, settings.admin_user)
     if not admin_user:
         admin_user = Admin(

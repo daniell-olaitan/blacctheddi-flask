@@ -15,7 +15,6 @@ from app.schemas.category import CategoryBase
 settings = get_settings()
 engine = create_engine(settings.database_uri)
 
-
 class VideoCategoryLink(SQLModel, table=True):
     video_id: int | None = Field(default=None, foreign_key="videos.id", primary_key=True)
     category_id: int | None = Field(default=None, foreign_key="categories.id", primary_key=True)

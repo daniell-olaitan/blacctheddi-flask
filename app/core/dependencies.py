@@ -7,7 +7,9 @@ from jwt.exceptions import InvalidTokenError
 from flask import request, jsonify
 from functools import wraps
 from config import get_settings
+from app.storage.database import SessionLocal
 from app.crud.admin import get_admin
+from contextlib import contextmanager
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
@@ -15,6 +17,13 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
+@contextmanager
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 def get_db() -> Session:
     """Return a database session."""
     return Session(engine)
