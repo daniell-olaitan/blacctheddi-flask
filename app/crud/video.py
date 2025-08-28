@@ -34,7 +34,7 @@ def get_videos(
         )
         categories = db.exec(stmt).all()
 
-        videos = {
+        grouped = {
             category.name: sorted(
                 category.videos,
                 key=lambda v: v.timestamp,
@@ -43,10 +43,10 @@ def get_videos(
             for category in categories
         }
 
-        return [
-            VideoPublicWithRel.model_validate(v).model_dump()
-            for v in videos
-        ]
+        return {
+            category: [VideoPublicWithRel.model_validate(v).model_dump() for v in vids]
+            for category, vids in grouped.items()
+        }
 
     else:
         if category_ids:
@@ -60,11 +60,12 @@ def get_videos(
         else:
             stmt = select(Video).order_by(Video.timestamp.desc())
 
-        grouped = db.exec(stmt).all()
-        return {
-            category: [VideoPublicWithRel.model_validate(v).model_dump() for v in vids]
-            for category, vids in grouped.items()
-        }
+        videos = db.exec(stmt).all()
+
+        return [
+            VideoPublicWithRel.model_validate(v).model_dump()
+            for v in videos
+        ]
 
 
 def get_video_and_increment_views(db: Session, video_id: int) -> VideoCombined:

@@ -55,7 +55,11 @@ def sign_video_part():
     data = request.json
     key = data.get("key")
     upload_id = data.get("upload_id")
-    part_number = data.get("part_number")
+    try:
+        part_number = int(data.get("part_number"))
+    except Exception as e:
+        return jsonify({'error': 'invalid part number'}), 400
+
 
     if not key or not upload_id or not part_number:
         return jsonify({"error": "Missing key, upload_id, or part_number"}), 400
