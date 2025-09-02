@@ -37,6 +37,8 @@ def comment_on_event(
 def like_event(db: Session, event_id: int) -> LikePublic:
     like = Like(event_id=event_id)
     db.add(like)
+    db.flush()
+    db.refresh(like)
 
     return LikePublic.model_validate(like).model_dump()
 

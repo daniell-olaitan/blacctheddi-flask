@@ -28,6 +28,8 @@ def comment_on_update(
 def like_update(db: Session, update_id: int) -> LikePublic:
     like = Like(update_id=update_id)
     db.add(like)
+    db.flush()
+    db.refresh(like)
 
     return LikePublic.model_validate(like).model_dump()
 

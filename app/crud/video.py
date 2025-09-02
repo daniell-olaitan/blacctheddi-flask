@@ -118,6 +118,8 @@ def comment_on_video(
 def like_video(db: Session, video_id: int) -> LikePublic:
     like = Like(video_id=video_id)
     db.add(like)
+    db.flush()
+    db.refresh(like)
 
     return LikePublic.model_validate(like).model_dump()
 
