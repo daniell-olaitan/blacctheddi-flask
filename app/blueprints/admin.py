@@ -6,8 +6,8 @@ from uuid import uuid4
 from flask import Blueprint, request, jsonify
 from app.core.dependencies import verify_admin, safe_db_operation
 from app.crud import admin as admin_crud
-from app.schemas.event import EventCreate
-from app.schemas.update import LiveUpdateCreate
+from app.schemas.event import EventCreate, EventUpdate
+from app.schemas.update import LiveUpdateCreate, LiveUpdateUpdate
 from config import get_settings
 
 settings = get_settings()
@@ -155,7 +155,7 @@ def create_event():
 
 @admin_bp.route("/events/<int:event_id>/updates", methods=["POST"])
 @verify_admin
-def add_update_to_event(event_id):
+def add_update_to_event(event_id: int):
     title = request.form.get("title")
     details = request.form.get("details")
     image_file = request.files.get("image_file")
@@ -187,6 +187,111 @@ def get_the_analytics():
 def close_and_delete_event(event_id):
     try:
         result = safe_db_operation(admin_crud.delete_event, event_id)
+        return jsonify(result.model_dump())
+    except Exception as e:
+        return jsonify({'error': 'failed'}), 500
+
+
+@admin_bp.route("/events/<int:event_id>", methods=["PATCH"])
+@verify_admin
+def update_event(event_id: int):
+    """Update an existing event"""
+    title = request.form.get("title")
+    details = request.form.get("details")
+    status = request.form.get("status")
+    image_file = request.files.get("image_file")
+
+    # Create update data only with provided fields
+    update_data = {}
+    if title is not None:
+        update_data["title"] = title
+    if details is not None:
+        update_data["details"] = details
+    if status is not None:
+        update_data["status"] = status
+
+    # Validate the update data using Pydantic
+    try:
+        event_update = EventUpdate(**update_data)
+    except Exception as e:
+        return jsonify({"error": "Invalid update data"}), 400
+
+    if not update_data and not image_file:
+        return jsonify({"error": "No fields to update"}), 400
+
+    try:
+        updated_event = safe_db_operation(
+            admin_crud.update_event,
+            event_id,
+            event_update,
+            image_file
+        )
+        if not updated_event:
+            return jsonify({"error": "Event not found"}), 404
+        return jsonify(updated_event)
+    except Exception as e:
+        return jsonify({'error': 'failed'}), 500
+
+
+@admin_bp.route("/updates/<int:update_id>", methods=["PATCH"])
+@verify_admin
+def update_live_update(update_id: int):
+    """Update an existing live update"""
+    title = request.form.get("title")
+    details = request.form.get("details")
+    image_file = request.files.get("image_file")
+
+    # Create update data only with provided fields
+    update_data = {}
+    if title is not None:
+        update_data["title"] = title
+    if details is not None:
+        update_data["details"] = details
+
+    # Validate the update data using Pydantic
+    try:
+        live_update_update = LiveUpdateUpdate(**update_data)
+    except Exception as e:
+        return jsonify({"error": "Invalid update data"}), 400
+
+    if not update_data and not image_file:
+        return jsonify({"error": "No fields to update"}), 400
+
+    try:
+        updated_live_update = safe_db_operation(
+            admin_crud.update_live_update,
+            update_id,
+            live_update_update,
+            image_file
+        )
+        if not updated_live_update:
+            return jsonify({"error": "Live update not found"}), 404
+        return jsonify(updated_live_update)
+    except Exception as e:
+        return jsonify({'error': 'failed'}), 500
+
+
+@admin_bp.route("/updates/<int:update_id>", methods=["DELETE"])
+@verify_admin
+def delete_live_update(update_id):
+    """Delete a live update"""
+    try:
+        result = safe_db_operation(admin_crud.delete_live_update, update_id)
+        if not result:
+            return jsonify({"error": "Live update not found"}), 404
+        return jsonify(result.model_dump())
+    except Exception as e:
+        return jsonify({'error': 'failed'}), 500
+
+
+@admin_bp.route("/videos/<int:video_id>", methods=["DELETE"])
+@verify_admin
+def delete_video(video_id):
+    """Delete a video and its associated files from R2"""
+    try:
+        result = safe_db_operation(admin_crud.delete_video, video_id)
+        if not result:
+            return jsonify({"error": "Video not found"}), 404
         return jsonify(result.model_dump())
     except Exception as e:
         return jsonify({'error': 'failed'}), 500

@@ -15,6 +15,11 @@ class LiveUpdateBase(LiveUpdateCreate):
     image_url: str | None = None
 
 
+class LiveUpdateUpdate(SQLModel):
+    title: str | None = None
+    details: str | None = None
+
+
 class LiveUpdatePublic(LiveUpdateBase):
     id: int
 

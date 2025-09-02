@@ -16,6 +16,12 @@ class EventBase(EventCreate):
     image_url: str | None = None
 
 
+class EventUpdate(SQLModel):
+    title: str | None = None
+    details: str | None = None
+    status: str | None = None
+
+
 class EventPublic(EventBase):
     id: int
 

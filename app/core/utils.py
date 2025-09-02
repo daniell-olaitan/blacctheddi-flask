@@ -72,3 +72,18 @@ def store_file(file: FileStorage, file_type: str = "videos") -> str:
 
     except Exception as e:
         abort(500, description=f"Upload failed")
+
+
+def delete_file(file_url: str):
+    """
+    Delete a file from R2 storage given its public URL.
+
+    Args:
+        file_url (str): Publicly accessible file URL.
+    """
+    try:
+        base_url = settings.r2_public_url.rstrip("/")
+        old_key = file_url.split(f"{base_url}/")[-1]
+        r2_client.delete_object(Bucket=settings.r2_bucket_name, Key=old_key)
+    except Exception:
+        pass  # Continue even if deletion fails

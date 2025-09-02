@@ -1,4 +1,3 @@
-# app/core/dependencies.py
 import jwt
 from sqlmodel import Session
 from app.storage.database import db_config, get_db, db_retry
